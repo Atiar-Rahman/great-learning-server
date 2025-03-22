@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 3000;
 
 //middle ware
 app.use(cors())
@@ -30,6 +30,40 @@ async function run() {
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
+
+      const database = client.db('CourseDB');
+      const CourseCollection = database.collection('courses');
+      const instructorCollection = database.collection('instructor');
+      
+
+      app.get('/course',async(req,res)=>{
+        const cursor = CourseCollection.find()
+        const result = await cursor.toArray();
+        res.send(result);
+      })
+
+      app.post('/course',async(req,res)=>{
+        const data = req.body;
+        // console.log(data);
+        const result = await CourseCollection.insertOne(data);
+        res.send(result);
+      })
+
+      app.get('/instructor',async(req,res)=>{
+        const cursor = instructorCollection.find();
+        const result = await cursor.toArray();
+        res.send(result);
+      })
+
+      app.post('/instructor',async(req,res)=>{
+        const data = req.body;
+        // console.log(data);
+        const result = await instructorCollection.insertOne(data);
+        res.send(result);
+      })
+
+
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
