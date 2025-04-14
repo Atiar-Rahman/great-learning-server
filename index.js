@@ -54,6 +54,36 @@ async function run() {
         const result= await CourseCollection.deleteOne(query)
         res.send(result)
       })
+      app.get('/course/:id',async(req,res)=>{
+        const id = req.params.id;
+
+        const query = {_id:new ObjectId(id)}
+        const result =await CourseCollection.findOne(query);
+        res.send(result);
+      })
+
+      app.put('/course/:id',async(req,res)=>{
+        const id = req.params.id;
+        const filter = {_id: new ObjectId(id)}
+        const options = {upsert:true}
+        const updatedCourse = req.body;
+        const course = {
+          $set:{
+            title:updatedCourse.title,
+            duration:updatedCourse.duration,
+            instructorName:updatedCourse.instructorName,
+            lessonNo:updatedCourse.lessonNo,
+            numOfStudents:updatedCourse.numOfStudents,
+            money:updatedCourse.money,
+            rating:updatedCourse.rating,
+            description:updatedCourse.description,
+            files:updatedCourse.files,
+          }
+        }
+
+        const result = await CourseCollection.updateOne(filter, course, options)
+        res.send(result)
+      })
 
       app.get('/instructor',async(req,res)=>{
         const cursor = instructorCollection.find();
@@ -67,15 +97,40 @@ async function run() {
         const result = await instructorCollection.insertOne(data);
         res.send(result);
       })
-
-      app.get('/course/:id',async(req,res)=>{
-        const id = req.params.id;
-
+      app.delete('/instructor/:id',async(req,res)=>{
+        const id = req.params.id
+        // console.log(data);
         const query = {_id:new ObjectId(id)}
-        const result =await CourseCollection.findOne(query);
+
+        const result = await instructorCollection.deleteOne(query);
         res.send(result);
       })
 
+      app.get('/instructor/:id',async(req,res)=>{
+        const id  = req.params.id;
+        const query = {_id: new ObjectId(id)}
+        const result = await instructorCollection.findOne(query)
+        res.send(result)
+      })
+      app.put('/instructor/:id',async(req,res)=>{
+        const id = req.params.id;
+        const filter = {_id: new ObjectId(id)}
+        const options = {upsert:true}
+        const updatedInstructor = req.body;
+        const instructor = {
+          $set:{
+            name:updatedInstructor.name,
+            experience:updatedInstructor.experience,
+            instructor_type:updatedInstructor.instructor_type,
+            education:updatedInstructor.education,
+            description:updatedInstructor.description,
+            file:updatedInstructor.file
+           }
+        }
+
+        const result = await instructorCollection.updateOne(filter, instructor, options)
+        res.send(result)
+      })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
