@@ -34,7 +34,20 @@ async function run() {
       const database = client.db('CourseDB');
       const CourseCollection = database.collection('courses');
       const instructorCollection = database.collection('instructor');
+      const contactInfoCollection = database.collection('contactInfo');
       
+
+      app.get('/contactinfo',async(req,res)=>{
+        const cursor = contactInfoCollection.find();
+        const result = await cursor.toArray();
+        res.send(result)
+      })
+
+      app.post('/contactinfo',async(req,res)=>{
+        const data = req.body;
+        const result = await contactInfoCollection.insertOne(data)
+        res.send(result);
+      })
 
       app.get('/course',async(req,res)=>{
         const cursor = CourseCollection.find()
