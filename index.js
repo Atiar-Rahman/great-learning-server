@@ -43,6 +43,8 @@ async function run() {
     const instructorCollection = database.collection('instructor');
     const contactInfoCollection = database.collection('contactInfo');
     const orderCollection = database.collection('order')
+    const userCollection = database.collection("users")
+
 
     const tran_id = new ObjectId().toString();//random id generate
 
@@ -118,6 +120,16 @@ async function run() {
         })
     })
 
+    app.get('/users',async(req,res)=>{
+      const cursor = userCollection.find()
+      const result = await cursor.toArray()
+      res.send(result)
+    })
+    app.post('/users',async(req,res)=>{
+      const data = req.body;
+      const result = await userCollection.insertOne(data)
+      res.send(result)
+    })
     app.get('/contactinfo', async (req, res) => {
       const cursor = contactInfoCollection.find();
       const result = await cursor.toArray();
