@@ -44,7 +44,16 @@ async function run() {
     const contactInfoCollection = database.collection('contactInfo');
     const orderCollection = database.collection('order')
     const userCollection = database.collection("users")
+    const videoCollection = database.collection('videos')
 
+    app.post('/video',async(req,res)=>{
+      const data = req.body;
+      // console.log(data)
+      const result = await videoCollection.insertOne(data)
+      res.send(result)
+    })
+
+    
 
     const tran_id = new ObjectId().toString();//random id generate
 
@@ -91,7 +100,7 @@ async function run() {
         res.send({url:GatewayPageURL})
 
         const finalOrder = {
-          course,paidStatus: false,transjactionId: tran_id
+          course,paidStatus: false,transjactionId: tran_id,email: courseData.email
         }
         const result = orderCollection.insertOne(finalOrder)
 
