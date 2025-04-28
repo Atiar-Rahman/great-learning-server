@@ -53,8 +53,40 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/videos', async (req, res) => {
+      const email = req.query.email;
+      // console.log('Fetching videos for email:', email);
     
-
+      try {
+        // 1. Find all orders for this email
+        const orderQuery = { email: email };
+        const ordersCursor = orderCollection.find(orderQuery);
+        const orders = await ordersCursor.toArray();
+    
+        // 2. Extract course titles
+        const courseNames = orders.map(order => order.course.title);
+        // console.log('Course Names:', courseNames);
+    
+        if (courseNames.length === 0) {
+          return res.send([]); // No orders
+        }
+    
+        // 3. Match courseSelect field in videos
+        const videoQuery = { courseSelect: { $in: courseNames } };
+        const videosCursor = videoCollection.find(videoQuery);
+        const videos = await videosCursor.toArray();
+    
+        // console.log('Found videos:', videos.length);
+    
+        res.send(videos);
+    
+      } catch (error) {
+        console.error('Error fetching videos:', error);
+        res.status(500).send({ message: 'Server error' });
+      }
+    });
+    
+    
     const tran_id = new ObjectId().toString();//random id generate
 
     app.post('/enroll', async (req, res) => {
@@ -92,7 +124,7 @@ async function run() {
         ship_postcode: 1000,
         ship_country: 'Bangladesh',
       };
-      console.log(data)
+      // console.log(data)
       const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
       sslcz.init(data).then(apiResponse => {
         // Redirect the user to payment gateway
@@ -105,11 +137,11 @@ async function run() {
         const result = orderCollection.insertOne(finalOrder)
 
 
-        console.log('Redirecting to: ', GatewayPageURL)
+        // console.log('Redirecting to: ', GatewayPageURL)
       });
 
         app.post('/payment/success/:tranId',async(req,res)=>{
-          console.log(req.params.tranId)
+          // console.log(req.params.tranId)
           const result =await orderCollection.updateOne({transjactionId:req.params.tranId},{
             $set:{
               paidStatus:true
