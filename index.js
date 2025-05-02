@@ -23,7 +23,7 @@ app.use(cookieParser())
 //   origin: ['https://great-learning-f1298.web.app'],
 //   credentials: true
 // }));
-app.options('*', cors(corsOptions));
+// app.options('*', cors(corsOptions));
 const logger = (req, res, next) => {
   // console.log("inside the logger")
   next();
@@ -111,7 +111,7 @@ async function run() {
     // Get all Python basic course documents
     app.get('/pythonbasic', async (req, res) => {
       try {
-        const result = await pythonCollection.find().toArray();
+        const result = await pythoncollection.find().toArray();
         res.status(200).json(result);
       } catch (error) {
         console.error('Error fetching pythonbasic data:', error);
@@ -122,7 +122,7 @@ async function run() {
     // Get all syllabus documents
     app.get('/syllabus', async (req, res) => {
       try {
-        const result = await syllabusCollection.find().toArray();
+        const result = await sylebusCollection .find().toArray();
         res.status(200).json(result);
       } catch (error) {
         console.error('Error fetching syllabus data:', error);
