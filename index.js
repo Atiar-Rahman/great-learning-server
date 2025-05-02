@@ -2,15 +2,55 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const SSLCommerzPayment = require('sslcommerz-lts')
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 //middle ware
-app.use(cors())
+// app.use(cors())
 app.use(express.json())
+app.use(cookieParser())
+app.use(cors({
+  origin: ['http://localhost:5173'],
+  credentials: true
+}));
 
+const logger = (req, res, next) => {
+  // console.log("inside the logger")
+  next();
+}
 
+const verifyToken = (req, res, next) => {
+  // console.log('inside verufy token')
+  const token = req?.cookies?.token;
+  if (!token) {
+    return res.status(401).send({ message: 'Unauthorized Access' })
+  }
+  // console.log(token)
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: 'unauthorized access' });
+    }
+    req.user = decoded;
+    next()
+  })
+}
+
+// use verify admin after verify token
+
+const varifyAdmin = async(req,res,next)=>{
+  const email = req.decoded.email;
+  const query = {email:email};
+  const user = await userCollection.findOne(query);
+  const isAdmin = user?.role === 'admin';
+  if(!isAdmin){
+    return res.status(403).send({message:'forbidden access'})
+  }
+  next();
+}
 //routers
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -46,47 +86,72 @@ async function run() {
     const userCollection = database.collection("users")
     const videoCollection = database.collection('videos')
 
-    app.post('/video',async(req,res)=>{
+
+    // ✅ Auth route
+    app.post('/jwt', (req, res) => {
+      const user = req.body;
+
+      const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '5d' });
+
+      res
+        .cookie('token', token, {
+          httpOnly: true,
+          secure: false,       // set to true in production with HTTPS
+          // sameSite: 'lax'      // important for cross-origin cookie behavior
+        })
+        .send({ success: true });
+    });
+
+    app.post('/logout', (req, res) => {
+      // Clear the HttpOnly cookie by setting it to a past date
+      res.clearCookie('token');
+      res.send({ success: true });
+    });
+
+    app.post('/video',varifyAdmin ,verifyToken, async (req, res) => {
       const data = req.body;
       // console.log(data)
       const result = await videoCollection.insertOne(data)
       res.send(result)
     })
 
-    app.get('/videos', async (req, res) => {
+    app.get('/videos',verifyToken, async (req, res) => {
       const email = req.query.email;
       // console.log('Fetching videos for email:', email);
-    
+      // console.log('cuk cuk cooikes ',req.cookies) //read from cooikes
+      if (req.user.email !== email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       try {
         // 1. Find all orders for this email
         const orderQuery = { email: email };
         const ordersCursor = orderCollection.find(orderQuery);
         const orders = await ordersCursor.toArray();
-    
+
         // 2. Extract course titles
         const courseNames = orders.map(order => order.course.title);
         // console.log('Course Names:', courseNames);
-    
+
         if (courseNames.length === 0) {
           return res.send([]); // No orders
         }
-    
+
         // 3. Match courseSelect field in videos
         const videoQuery = { courseSelect: { $in: courseNames } };
         const videosCursor = videoCollection.find(videoQuery);
         const videos = await videosCursor.toArray();
-    
+
         // console.log('Found videos:', videos.length);
-    
+
         res.send(videos);
-    
+
       } catch (error) {
         console.error('Error fetching videos:', error);
         res.status(500).send({ message: 'Server error' });
       }
     });
-    
-    
+
+
     const tran_id = new ObjectId().toString();//random id generate
 
     app.post('/enroll', async (req, res) => {
@@ -129,10 +194,10 @@ async function run() {
       sslcz.init(data).then(apiResponse => {
         // Redirect the user to payment gateway
         let GatewayPageURL = apiResponse.GatewayPageURL
-        res.send({url:GatewayPageURL})
+        res.send({ url: GatewayPageURL })
 
         const finalOrder = {
-          course,paidStatus: false,transjactionId: tran_id,email: courseData.email
+          course, paidStatus: false, transjactionId: tran_id, email: courseData.email
         }
         const result = orderCollection.insertOne(finalOrder)
 
@@ -140,33 +205,86 @@ async function run() {
         // console.log('Redirecting to: ', GatewayPageURL)
       });
 
-        app.post('/payment/success/:tranId',async(req,res)=>{
-          // console.log(req.params.tranId)
-          const result =await orderCollection.updateOne({transjactionId:req.params.tranId},{
-            $set:{
-              paidStatus:true
-            }
-          })
-          if(result.modifiedCount>0){
-            res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`)
+      app.post('/payment/success/:tranId', async (req, res) => {
+        // console.log(req.params.tranId)
+        const result = await orderCollection.updateOne({ transjactionId: req.params.tranId }, {
+          $set: {
+            paidStatus: true
           }
         })
+        if (result.modifiedCount > 0) {
+          res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`)
+        }
+      })
 
-        app.post('/payment/fail/:tranId',async(req,res)=>{
-          const result = await orderCollection.deleteOne({transjactionId: req.params.tranId})
+      app.post('/payment/fail/:tranId', async (req, res) => {
+        const result = await orderCollection.deleteOne({ transjactionId: req.params.tranId })
 
-          if(result.deletedCount){
-            res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`)
-          }
-        })
+        if (result.deletedCount) {
+          res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`)
+        }
+      })
     })
 
-    app.get('/users',async(req,res)=>{
+    //users related api
+    app.get('/users',varifyAdmin, verifyToken, async (req, res) => {
       const cursor = userCollection.find()
       const result = await cursor.toArray()
       res.send(result)
     })
-    app.post('/users',async(req,res)=>{
+
+    app.get('/users/admin/:email',varifyAdmin, verifyToken, async (req, res) => {
+      try {
+        const email = req.params.email;
+    
+        // Check if the token email matches the requested email
+        if (email !== req.user.email) {
+          return res.status(403).send({ message: "Unauthorized access" });
+        }
+    
+        // Fetch the user from the database
+        const query = { email };
+        const user = await userCollection.findOne(query);
+    
+        if (!user) {
+          return res.status(404).send({ message: "User not found" });
+        }
+    
+        // Check if the user has an 'admin' role
+        const admin = user.role === 'admin';
+        res.send({ admin });
+    
+      } catch (error) {
+        console.error("Error in /users/admin/:email route:", error);
+        res.status(500).send({ message: "Internal Server Error" });
+      }
+    });
+    
+
+    app.patch('/users/admin/:id', varifyAdmin,verifyToken, async (req, res) => {
+      const { id } = req.params;
+
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: { role: 'admin' }
+      };
+
+      try {
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ error: 'Failed to update user role' });
+      }
+    });
+
+    app.delete('/users/:id',varifyAdmin,verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await userCollection.deleteOne(query)
+      res.send(result);
+    })
+    app.post('/users', async (req, res) => {
       const data = req.body;
       const result = await userCollection.insertOne(data)
       res.send(result)
@@ -209,7 +327,7 @@ async function run() {
       res.send(result);
     })
 
-    app.put('/course/:id', async (req, res) => {
+    app.put('/course/:id',varifyAdmin,verifyToken, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
       const options = { upsert: true }
