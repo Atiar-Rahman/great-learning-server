@@ -106,7 +106,7 @@ async function run() {
         secure: true,         // ✅ required for cross-site cookies
         sameSite: 'None',     // ✅ required for cross-origin cookies
       })
-      .send({ "admin": true })
+        .send({ "admin": true })
     });
 
     // Get all Python basic course documents
@@ -123,7 +123,7 @@ async function run() {
     // Get all syllabus documents
     app.get('/syllabus', async (req, res) => {
       try {
-        const result = await sylebusCollection .find().toArray();
+        const result = await sylebusCollection.find().toArray();
         res.send(result)
       } catch (error) {
         console.error('Error fetching syllabus data:', error);
@@ -262,30 +262,21 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/users/admin/:email', verifyToken, async (req, res) => {
+    // Example of the backend code (Express.js)
+    app.get('/users/admin/:email', async (req, res) => {
       try {
-        const email = req.params.email;
+        const { email } = req.params;
 
-        // Check if the token email matches the requested email
-        if (email !== req.user.email) {
-          return res.status(403).send({ message: "Unauthorized access" });
-        }
-
-        // Fetch the user from the database
-        const query = { email };
-        const user = await userCollection.findOne(query);
+        // Find user by email and check if they are an admin
+        const user = await User.findOne({ email });
 
         if (!user) {
-          return res.status(404).send({ message: "User not found" });
+          return res.status(404).json({ message: 'User not found' });
         }
 
-        // Check if the user has an 'admin' role
-        const admin = user.role === 'admin';
-        res.send({ admin });
-
-      } catch (error) {
-        console.error("Error in /users/admin/:email route:", error);
-        res.status(500).send({ message: "Internal Server Error" });
+        res.json({ admin: user.isAdmin });  // Assuming user has an 'isAdmin' field
+      } catch (err) {
+        res.status(500).json({ message: 'Server error' });
       }
     });
 
