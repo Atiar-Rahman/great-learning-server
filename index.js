@@ -112,7 +112,7 @@ async function run() {
     app.get('/pythonbasic', async (req, res) => {
       try {
         const result = await pythoncollection.find().toArray();
-        res.status(200).json(result);
+        res.send(result)
       } catch (error) {
         console.error('Error fetching pythonbasic data:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -123,7 +123,7 @@ async function run() {
     app.get('/syllabus', async (req, res) => {
       try {
         const result = await sylebusCollection .find().toArray();
-        res.status(200).json(result);
+        res.send(result)
       } catch (error) {
         console.error('Error fetching syllabus data:', error);
         res.status(500).json({ error: 'Internal Server Error' });
