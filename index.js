@@ -47,13 +47,13 @@ const verifyToken = (req, res, next) => {
 
 // use verify admin after verify token
 
-const varifyAdmin = async(req,res,next)=>{
+const varifyAdmin = async (req, res, next) => {
   const email = req.decoded.email;
-  const query = {email:email};
+  const query = { email: email };
   const user = await userCollection.findOne(query);
   const isAdmin = user?.role === 'admin';
-  if(!isAdmin){
-    return res.status(403).send({message:'forbidden access'})
+  if (!isAdmin) {
+    return res.status(403).send({ message: 'forbidden access' })
   }
   next();
 }
@@ -108,28 +108,42 @@ async function run() {
       })
     });
 
-    app.get('/pythonbasic',async(req,res)=>{
-      const result = await pythoncollection.find().toArray();
-      res.send(result);
-    })
-    app.get('/sylebus',async(req,res)=>{
-      const result = await sylebusCollection.find().toArray();
-      res.send(result);
-    })
+    // Get all Python basic course documents
+    app.get('/pythonbasic', async (req, res) => {
+      try {
+        const result = await pythonCollection.find().toArray();
+        res.status(200).json(result);
+      } catch (error) {
+        console.error('Error fetching pythonbasic data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    });
+
+    // Get all syllabus documents
+    app.get('/syllabus', async (req, res) => {
+      try {
+        const result = await syllabusCollection.find().toArray();
+        res.status(200).json(result);
+      } catch (error) {
+        console.error('Error fetching syllabus data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    });
+
     app.post('/logout', (req, res) => {
       // Clear the HttpOnly cookie by setting it to a past date
       res.clearCookie('token');
       res.send({ success: true });
     });
 
-    app.post('/video',varifyAdmin ,verifyToken, async (req, res) => {
+    app.post('/video', varifyAdmin, verifyToken, async (req, res) => {
       const data = req.body;
       // console.log(data)
       const result = await videoCollection.insertOne(data)
       res.send(result)
     })
 
-    app.get('/videos',verifyToken, async (req, res) => {
+    app.get('/videos', verifyToken, async (req, res) => {
       const email = req.query.email;
       // console.log('Fetching videos for email:', email);
       // console.log('cuk cuk cooikes ',req.cookies) //read from cooikes
@@ -241,41 +255,41 @@ async function run() {
     })
 
     //users related api
-    app.get('/users',varifyAdmin, verifyToken, async (req, res) => {
+    app.get('/users', varifyAdmin, verifyToken, async (req, res) => {
       const cursor = userCollection.find()
       const result = await cursor.toArray()
       res.send(result)
     })
 
-    app.get('/users/admin/:email',varifyAdmin, verifyToken, async (req, res) => {
+    app.get('/users/admin/:email', varifyAdmin, verifyToken, async (req, res) => {
       try {
         const email = req.params.email;
-    
+
         // Check if the token email matches the requested email
         if (email !== req.user.email) {
           return res.status(403).send({ message: "Unauthorized access" });
         }
-    
+
         // Fetch the user from the database
         const query = { email };
         const user = await userCollection.findOne(query);
-    
+
         if (!user) {
           return res.status(404).send({ message: "User not found" });
         }
-    
+
         // Check if the user has an 'admin' role
         const admin = user.role === 'admin';
         res.send({ admin });
-    
+
       } catch (error) {
         console.error("Error in /users/admin/:email route:", error);
         res.status(500).send({ message: "Internal Server Error" });
       }
     });
-    
 
-    app.patch('/users/admin/:id', varifyAdmin,verifyToken, async (req, res) => {
+
+    app.patch('/users/admin/:id', varifyAdmin, verifyToken, async (req, res) => {
       const { id } = req.params;
 
       const filter = { _id: new ObjectId(id) };
@@ -292,7 +306,7 @@ async function run() {
       }
     });
 
-    app.delete('/users/:id',varifyAdmin,verifyToken, async (req, res) => {
+    app.delete('/users/:id', varifyAdmin, verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await userCollection.deleteOne(query)
@@ -341,7 +355,7 @@ async function run() {
       res.send(result);
     })
 
-    app.put('/course/:id',varifyAdmin,verifyToken, async (req, res) => {
+    app.put('/course/:id', varifyAdmin, verifyToken, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
       const options = { upsert: true }
