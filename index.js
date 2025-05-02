@@ -91,8 +91,8 @@ async function run() {
     const orderCollection = database.collection('order')
     const userCollection = database.collection("users")
     const videoCollection = database.collection('videos')
-    const sylebusCollection = database.collection('sylebus');
-    const pythoncollection = database.collection('pythonBasic');
+    const sylebusCollection = database.collection('sylebusCollection');
+    const pythoncollection = database.collection('pythoncollection');
 
 
     // ✅ Auth route
