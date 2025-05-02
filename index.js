@@ -96,8 +96,8 @@ async function run() {
       res
         .cookie('token', token, {
           httpOnly: true,
-          secure: false,       // set to true in production with HTTPS
-          // sameSite: 'lax'      // important for cross-origin cookie behavior
+          secure: true,       // set to true in production with HTTPS
+          sameSite: 'None'      // important for cross-origin cookie behavior
         })
         .send({ success: true });
     });
