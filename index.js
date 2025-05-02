@@ -14,7 +14,7 @@ const port = process.env.PORT || 3000;
 app.use(express.json())
 app.use(cookieParser())
 app.use(cors({
-  origin: ['http://localhost:5173','https://great-learning-f1298.web.app'],
+  origin: ['https://great-learning-f1298.web.app'],
   credentials: true
 }));
 
