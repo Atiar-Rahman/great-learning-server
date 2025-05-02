@@ -268,7 +268,7 @@ async function run() {
         const { email } = req.params;
 
         // Find user by email and check if they are an admin
-        const user = await User.findOne({ email });
+        const user = await userCollection.findOne({ email });
 
         if (!user) {
           return res.status(404).json({ message: 'User not found' });
