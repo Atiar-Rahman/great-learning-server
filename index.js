@@ -48,15 +48,30 @@ const verifyToken = (req, res, next) => {
 // use verify admin after verify token
 
 const varifyAdmin = async (req, res, next) => {
-  const email = req.decoded.email;
-  const query = { email: email };
-  const user = await userCollection.findOne(query);
-  const isAdmin = user?.role === 'admin';
-  if (!isAdmin) {
-    return res.status(403).send({ message: 'forbidden access' })
+  try {
+    const email = req.decoded?.email;
+
+    if (!email) {
+      return res.status(401).json({ message: 'Unauthorized: No email in token' });
+    }
+
+    const user = await userCollection.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden: Admins only' });
+    }
+
+    next();
+  } catch (err) {
+    console.error('Error in verifyAdmin:', err);
+    res.status(500).json({ message: 'Server error during admin verification' });
   }
-  next();
-}
+};
+
 //routers
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -266,19 +281,19 @@ async function run() {
     app.get('/users/admin/:email', async (req, res) => {
       try {
         const { email } = req.params;
-
-        // Find user by email and check if they are an admin
+    
         const user = await userCollection.findOne({ email });
-
+    
         if (!user) {
           return res.status(404).json({ message: 'User not found' });
         }
-
-        res.json({ admin: user.isAdmin });  // Assuming user has an 'isAdmin' field
+    
+        res.json({ isAdmin: user?.isAdmin === true }); // Ensure consistent key
       } catch (err) {
         res.status(500).json({ message: 'Server error' });
       }
     });
+    
 
 
     app.patch('/users/admin/:id', verifyToken, async (req, res) => {
