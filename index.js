@@ -242,7 +242,7 @@ async function run() {
           }
         })
         if (result.modifiedCount > 0) {
-          res.redirect(`http://localhost:5173/payment/success/${req.params.tranId}`)
+          res.redirect(`https://great-learning-f1298.web.app/payment/success/${req.params.tranId}`)
         }
       })
 
@@ -250,7 +250,7 @@ async function run() {
         const result = await orderCollection.deleteOne({ transjactionId: req.params.tranId })
 
         if (result.deletedCount) {
-          res.redirect(`http://localhost:5173/payment/fail/${req.params.tranId}`)
+          res.redirect(`https://great-learning-f1298.web.app/payment/fail/${req.params.tranId}`)
         }
       })
     })
@@ -281,7 +281,7 @@ async function run() {
     });
 
 
-    app.patch('/users/admin/:id', varifyAdmin, verifyToken, async (req, res) => {
+    app.patch('/users/admin/:id', verifyToken, async (req, res) => {
       const { id } = req.params;
 
       const filter = { _id: new ObjectId(id) };
