@@ -106,6 +106,7 @@ async function run() {
         secure: true,         // ✅ required for cross-site cookies
         sameSite: 'None',     // ✅ required for cross-origin cookies
       })
+      .send({ "admin": true })
     });
 
     // Get all Python basic course documents
