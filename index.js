@@ -262,7 +262,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/users/admin/:email', varifyAdmin, verifyToken, async (req, res) => {
+    app.get('/users/admin/:email', verifyToken, async (req, res) => {
       try {
         const email = req.params.email;
 
