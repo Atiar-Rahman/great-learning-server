@@ -91,6 +91,8 @@ async function run() {
     const orderCollection = database.collection('order')
     const userCollection = database.collection("users")
     const videoCollection = database.collection('videos')
+    const sylebusCollection = database.collection('sylebus');
+    const pythoncollection = database.collection('pythonBasic');
 
 
     // ✅ Auth route
@@ -106,6 +108,14 @@ async function run() {
       })
     });
 
+    app.get('/pythonbasic',async(req,res)=>{
+      const result = await pythoncollection.find().toArray();
+      res.send(result);
+    })
+    app.get('/sylebus',async(req,res)=>{
+      const result = await sylebusCollection.find().toArray();
+      res.send(result);
+    })
     app.post('/logout', (req, res) => {
       // Clear the HttpOnly cookie by setting it to a past date
       res.clearCookie('token');
