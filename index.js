@@ -11,13 +11,19 @@ const port = process.env.PORT || 3000;
 
 //middle ware
 // app.use(cors())
+const corsOptions = {
+  origin: 'https://great-learning-f1298.web.app', // your frontend domain
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json())
 app.use(cookieParser())
-app.use(cors({
-  origin: ['https://great-learning-f1298.web.app'],
-  credentials: true
-}));
-
+// app.use(cors({
+//   origin: ['https://great-learning-f1298.web.app'],
+//   credentials: true
+// }));
+app.options('*', cors(corsOptions));
 const logger = (req, res, next) => {
   // console.log("inside the logger")
   next();
@@ -93,13 +99,11 @@ async function run() {
 
       const token = jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '5d' });
 
-      res
-        .cookie('token', token, {
-          httpOnly: true,
-          secure: true,       // set to true in production with HTTPS
-          sameSite: 'None'      // important for cross-origin cookie behavior
-        })
-        .send({ success: true });
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,         // ✅ required for cross-site cookies
+        sameSite: 'None',     // ✅ required for cross-origin cookies
+      })
     });
 
     app.post('/logout', (req, res) => {
