@@ -4,8 +4,6 @@ require('dotenv').config();
 const SSLCommerzPayment = require('sslcommerz-lts')
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 
 
 const app = express();
@@ -13,11 +11,6 @@ const port = process.env.PORT || 3000;
 
 //middle ware
 // app.use(cors())
-app.use(helmet());
-app.use(rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100
-}));
 app.use(cors({
   origin: 'https://great-learning-f1298.web.app',
   credentials: true
