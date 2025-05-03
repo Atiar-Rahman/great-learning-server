@@ -29,47 +29,38 @@ const logger = (req, res, next) => {
   next();
 }
 
+// Middleware to verify the JWT token
 const verifyToken = (req, res, next) => {
-  // console.log('inside verufy token')
-  const token = req?.cookies?.token;
+  const token = req.headers['authorization']?.split(' ')[1]; // Get token from Authorization header
+
   if (!token) {
-    return res.status(401).send({ message: 'Unauthorized Access' })
+    return res.status(401).send({ message: 'No token provided' });
   }
-  // console.log(token)
+
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      return res.status(401).send({ message: 'unauthorized access' });
+      return res.status(401).send({ message: 'Invalid or expired token' });
     }
-    req.user = decoded;
-    next()
-  })
-}
 
-// use verify admin after verify token
+    req.decoded = decoded; // Save the decoded payload for later use
+    next(); // Proceed to the next middleware or route handler
+  });
+};
 
+// Middleware to check if the user is an admin
 const varifyAdmin = async (req, res, next) => {
-  try {
-    const email = req.decoded?.email;
+  const email = req.decoded.email; // Get the email from the decoded token
+  const user = await userCollection.findOne({ email });
 
-    if (!email) {
-      return res.status(401).json({ message: 'Unauthorized: No email in token' });
-    }
-
-    const user = await userCollection.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (user.role !== 'admin') {
-      return res.status(403).json({ message: 'Forbidden: Admins only' });
-    }
-
-    next();
-  } catch (err) {
-    console.error('Error in verifyAdmin:', err);
-    res.status(500).json({ message: 'Server error during admin verification' });
+  if (!user) {
+    return res.status(404).send({ message: 'User not found' });
   }
+
+  if (user.role !== 'admin') {
+    return res.status(403).send({ message: 'Forbidden: You are not an admin' });
+  }
+
+  next(); // User is an admin, proceed to the route handler
 };
 
 //routers
