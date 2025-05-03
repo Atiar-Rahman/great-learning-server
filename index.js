@@ -16,6 +16,11 @@ app.use(cors({
   origin: 'https://great-learning-f1298.web.app',
   credentials: true
 }));
+// Explicitly handle preflight requests
+app.options('*', cors({
+  origin: 'https://great-learning-f1298.web.app',
+  credentials: true
+}));
 app.use(express.json())
 app.use(cookieParser())
 // app.use(cors({
@@ -269,7 +274,7 @@ async function run() {
     })
 
     // Example of the backend code (Express.js)
-    app.get('/users/admin/:email', async (req, res) => {
+    app.get('/users/admin/:email',verifyToken, async (req, res) => {
       try {
         const { email } = req.params;
         console.log(email)
@@ -353,7 +358,7 @@ async function run() {
       res.send(result);
     })
 
-    app.put('/course/:id', varifyAdmin, verifyToken, async (req, res) => {
+    app.put('/course/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
       const options = { upsert: true }
