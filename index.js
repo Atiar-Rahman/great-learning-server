@@ -14,7 +14,6 @@ const port = process.env.PORT || 3000;
 
 app.use(cors({
   origin: 'https://great-learning-f1298.web.app',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   credentials: true
 }));
 app.use(express.json())
