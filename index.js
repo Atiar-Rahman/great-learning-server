@@ -4,6 +4,8 @@ require('dotenv').config();
 const SSLCommerzPayment = require('sslcommerz-lts')
 const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 
 const app = express();
@@ -11,7 +13,11 @@ const port = process.env.PORT || 3000;
 
 //middle ware
 // app.use(cors())
-
+app.use(helmet());
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100
+}));
 app.use(cors({
   origin: 'https://great-learning-f1298.web.app',
   credentials: true
@@ -159,7 +165,7 @@ async function run() {
       const email = req.query.email;
       // console.log('Fetching videos for email:', email);
       // console.log('cuk cuk cooikes ',req.cookies) //read from cooikes
-      if (req.user.email !== email) {
+      if (req.decoded.email !== email) {
         return res.status(403).send({ message: 'forbidden access' })
       }
       try {
@@ -274,22 +280,22 @@ async function run() {
     })
 
     // Example of the backend code (Express.js)
-    app.get('/users/admin/:email',verifyToken, async (req, res) => {
+    app.get('/users/admin/:email', verifyToken, async (req, res) => {
       try {
         const { email } = req.params;
         console.log(email)
         const user = await userCollection.findOne({ email });
-    
+
         if (!user) {
           return res.status(404).json({ message: 'User not found' });
         }
-    
+
         res.json({ isAdmin: user?.isAdmin === true }); // Ensure consistent key
       } catch (err) {
         res.status(500).json({ message: 'Server error' });
       }
     });
-    
+
 
 
     app.patch('/users/admin/:id', verifyToken, async (req, res) => {
@@ -317,6 +323,11 @@ async function run() {
     })
     app.post('/users', async (req, res) => {
       const data = req.body;
+      const existing = await userCollection.findOne({ email: data.email });
+      if (existing) {
+        return res.status(409).send({ message: 'User already exists' });
+      }
+
       const result = await userCollection.insertOne(data)
       res.send(result)
     })
