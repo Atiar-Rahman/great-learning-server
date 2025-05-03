@@ -11,12 +11,11 @@ const port = process.env.PORT || 3000;
 
 //middle ware
 // app.use(cors())
-const corsOptions = {
-  origin: ['https://great-learning-f1298.web.app','http://localhost:5174'], // your frontend domain
-  credentials: true,
-};
 
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: 'https://great-learning-f1298.web.app',
+  credentials: true
+}));
 app.use(express.json())
 app.use(cookieParser())
 // app.use(cors({
