@@ -12,7 +12,7 @@ const port = process.env.PORT || 3000;
 //middle ware
 // app.use(cors())
 const corsOptions = {
-  origin: 'https://great-learning-f1298.web.app', // your frontend domain
+  origin: ['https://great-learning-f1298.web.app','http://localhost:5174'], // your frontend domain
   credentials: true,
 };
 
@@ -48,20 +48,21 @@ const verifyToken = (req, res, next) => {
 };
 
 // Middleware to check if the user is an admin
-const varifyAdmin = async (req, res, next) => {
-  const email = req.decoded.email; // Get the email from the decoded token
-  const user = await userCollection.findOne({ email });
+// const varifyAdmin = async (req, res, next) => {
+//   const email = req.decoded.email; // Get the email from the decoded token
+//   console.log(email)
+//   const user = await userCollection.findOne({ email });
 
-  if (!user) {
-    return res.status(404).send({ message: 'User not found' });
-  }
+//   if (!user) {
+//     return res.status(404).send({ message: 'User not found' });
+//   }
 
-  if (user.role !== 'admin') {
-    return res.status(403).send({ message: 'Forbidden: You are not an admin' });
-  }
+//   if (user.role !== 'admin') {
+//     return res.status(403).send({ message: 'Forbidden: You are not an admin' });
+//   }
 
-  next(); // User is an admin, proceed to the route handler
-};
+//   next(); // User is an admin, proceed to the route handler
+// };
 
 //routers
 
@@ -143,7 +144,7 @@ async function run() {
       res.send({ success: true });
     });
 
-    app.post('/video', varifyAdmin, verifyToken, async (req, res) => {
+    app.post('/video', verifyToken, async (req, res) => {
       const data = req.body;
       // console.log(data)
       const result = await videoCollection.insertOne(data)
@@ -262,7 +263,7 @@ async function run() {
     })
 
     //users related api
-    app.get('/users', varifyAdmin, verifyToken, async (req, res) => {
+    app.get('/users', verifyToken, async (req, res) => {
       const cursor = userCollection.find()
       const result = await cursor.toArray()
       res.send(result)
@@ -272,7 +273,7 @@ async function run() {
     app.get('/users/admin/:email', async (req, res) => {
       try {
         const { email } = req.params;
-    
+        console.log(email)
         const user = await userCollection.findOne({ email });
     
         if (!user) {
@@ -304,7 +305,7 @@ async function run() {
       }
     });
 
-    app.delete('/users/:id', varifyAdmin, verifyToken, async (req, res) => {
+    app.delete('/users/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await userCollection.deleteOne(query)
