@@ -11,15 +11,28 @@ const port = process.env.PORT || 3000;
 
 //middle ware
 // app.use(cors())
+// app.use(cors({
+//   origin: 'https://great-learning-f1298.web.app',
+//   credentials: true
+// }));
+const allowedOrigins = [
+  "https://great-learning-f1298.web.app",
+  "http://localhost:5173"
+];
+
 app.use(cors({
-  origin: 'https://great-learning-f1298.web.app',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
 }));
+
 // Explicitly handle preflight requests
-app.options('*', cors({
-  origin: 'https://great-learning-f1298.web.app',
-  credentials: true
-}));
+app.options('*', cors());
 app.use(express.json())
 app.use(cookieParser())
 // app.use(cors({
@@ -238,7 +251,7 @@ async function run() {
         const finalOrder = {
           course, paidStatus: false, transjactionId: tran_id, email: courseData.email
         }
-        const result = orderCollection.insertOne(finalOrder)
+        const result =  orderCollection.insertOne(finalOrder)
 
 
         // console.log('Redirecting to: ', GatewayPageURL)
