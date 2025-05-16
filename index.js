@@ -47,8 +47,9 @@ const logger = (req, res, next) => {
 
 // Middleware to verify the JWT token
 const verifyToken = (req, res, next) => {
-  const token = req.headers['authorization']?.split(' ')[1]; // Get token from Authorization header
-
+  // Check both header and cookies
+  const token = req.headers['authorization']?.split(' ')[1] || req.cookies.token;
+  
   if (!token) {
     return res.status(401).send({ message: 'No token provided' });
   }
@@ -57,9 +58,8 @@ const verifyToken = (req, res, next) => {
     if (err) {
       return res.status(401).send({ message: 'Invalid or expired token' });
     }
-
-    req.decoded = decoded; // Save the decoded payload for later use
-    next(); // Proceed to the next middleware or route handler
+    req.decoded = decoded;
+    next();
   });
 };
 
@@ -279,7 +279,7 @@ async function run() {
     })
 
     //users related api
-    app.get('/users', verifyToken, async (req, res) => {
+    app.get('/users', async (req, res) => {
       const cursor = userCollection.find()
       const result = await cursor.toArray()
       res.send(result)
